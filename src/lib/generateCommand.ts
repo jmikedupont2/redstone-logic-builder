@@ -13,14 +13,33 @@ export function generateCommand(gateType: GateType, inputs?: string): string {
     // Convert binary input to decimal
     const decimal = parseInt(inputs, 2);
     
-    // Generate commands to place glowstones based on the binary input
+    // Generate commands to build the decoder circuit
     const commands = [];
+    
+    // Place redstone dust line as the main bus
+    commands.push("/fill ~0 ~ ~ ~4 ~ ~ minecraft:redstone_wire");
+    
+    // Place levers for each input bit
+    for (let i = 0; i < 5; i++) {
+      const leverState = inputs[i] === "1" ? 8 : 0; // 8 is "powered" state
+      commands.push(`/setblock ~${i} ~ ~-1 minecraft:lever[face=floor,facing=south,powered=${leverState === 8}]`);
+    }
+    
+    // Place redstone torches and repeaters for signal conditioning
+    commands.push("/setblock ~0 ~ ~1 minecraft:redstone_torch");
+    commands.push("/setblock ~1 ~ ~1 minecraft:redstone_repeater[facing=north,delay=1]");
+    commands.push("/setblock ~2 ~ ~1 minecraft:redstone_torch");
+    commands.push("/setblock ~3 ~ ~1 minecraft:redstone_repeater[facing=north,delay=1]");
+    
+    // Place glowstones with redstone connections
     for (let i = 0; i < 4; i++) {
-      const shouldPlace = (decimal & (1 << i)) !== 0;
-      if (shouldPlace) {
-        commands.push(`/setblock ~${i} ~ ~ minecraft:glowstone`);
+      const shouldLight = (decimal & (1 << i)) !== 0;
+      if (shouldLight) {
+        commands.push(`/setblock ~${i} ~1 ~2 minecraft:glowstone`);
+        commands.push(`/setblock ~${i} ~ ~2 minecraft:redstone_wire`);
       } else {
-        commands.push(`/setblock ~${i} ~ ~ minecraft:stone`);
+        commands.push(`/setblock ~${i} ~1 ~2 minecraft:stone`);
+        commands.push(`/setblock ~${i} ~ ~2 minecraft:redstone_wire`);
       }
     }
     
